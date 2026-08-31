@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>應援色 · 追星時間軸</title>
+
+<link rel="manifest" href="./manifest.json" />
+<meta name="theme-color" content="#C9AEE0" />
+<meta name="description" content="記錄喜歡的團體與歌手，從第一天到現在的所有回憶。" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="應援色" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+<link rel="icon" href="./icon-192.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+
+<style>
+  :root{
+    --paper:#FBFAF8;
+    --paper-2:#FFFFFF;
+    --ink:#1A1918;
+    --ink-2:#5C5955;
+    --ink-3:#98938C;
+    --line:rgba(26,25,24,.10);
+    --line-soft:rgba(26,25,24,.06);
+
+    /* 由目前藝人的應援色動態覆寫 */
+    --accent:#7C6BD8;
+    --accent-08:rgba(124,107,216,.08);
+    --accent-16:rgba(124,107,216,.16);
+    --accent-32:rgba(124,107,216,.32);
+    --on-accent:#fff;
+    --accent-grad:linear-gradient(135deg,#7C6BD8,#7C6BD8);
+    --accent-grad-v:linear-gradient(to bottom,#7C6BD8,#7C6BD8);
+
+    --serif:"Noto Serif TC", serif;
+    --sans:"Noto Sans TC", system-ui, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, monospace;
+  }
+
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;color:inherit;border:none;background:none;cursor:pointer;font-size:inherit}
+  input,textarea,select{font-family:inherit;font-size:16px;color:inherit}
+  img{display:block;max-width:100%}
+
+  .wrap{max-width:640px;margin:0 auto;padding:0 20px}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;font-weight:500;
+    letter-spacing:.22em;text-transform:uppercase;color:var(--accent);
+  }
+  .muted{color:var(--ink-3)}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+  /* ---------- 頂部列 ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:40;
+    display:flex;align-items:center;gap:8px;
+    padding:12px 20px;
+    background:rgba(251,250,248,.86);
+    backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .topbar .spacer{flex:1}
+  .iconbtn{
+    width:38px;height:38px;border-radius:50%;
+    display:grid;place-items:center;font-size:20px;color:var(--ink-2);
+    transition:background .16s;
+  }
+  .iconbtn:hover{background:var(--line-soft)}
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;
+    height:38px;padding:0 16px;border-radius:999px;
+    background:var(--accent-grad);color:var(--on-accent);
+    font-weight:700;font-size:14px;
+    transition:transform .12s, filter .16s;
+  }
+  .pill:active{transform:scale(.97)}
+  .pill.ghost{background:transparent;color:var(--ink-2);border:1px solid var(--line)}
+
+  /* ---------- 藝人書架 ---------- */
+  .shelf-head{padding:26px 0 18px}
+  .shelf-head h1{
+    font-family:var(--serif);font-weight:900;font-size:32px;
+    letter-spacing:-.01em;margin:6px 0 4px;
+  }
+  .shelf{display:grid;gap:12px;padding-bottom:40px}
+  .artist-card{
+    display:flex;align-items:stretch;gap:0;
+    background:var(--paper-2);border:1px solid var(--line);
+    border-radius:14px;overflow:hidden;text-align:left;
+    transition:transform .14s, box-shadow .18s;
+  }
+  .artist-card:active{transform:scale(.99)}
+  .artist-card .stripe{width:6px;flex:none}
+  .artist-card .thumb{
+    width:82px;height:82px;flex:none;object-fit:cover;filter:grayscale(1) contrast(1.05);
+  }
+  .artist-card .thumb.empty{display:grid;place-items:center;font-size:24px;color:#fff}
+  .artist-card .body{flex:1;min-width:0;padding:12px 14px}
+  .artist-card .name{
+    font-family:var(--serif);font-weight:700;font-size:19px;line-height:1.3;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .artist-card .meta{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin-top:3px}
+
+  /* ---------- Hero ---------- */
+  .hero{position:relative;height:290px;overflow:hidden;background:var(--ink)}
+  .hero img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.08)}
+  .hero .wash{
+    position:absolute;inset:0;
+    background:
+      linear-gradient(to top, var(--paper) 0%, rgba(251,250,248,.72) 14%, transparent 52%),
+      linear-gradient(200deg, var(--accent-32), transparent 62%);
+    mix-blend-mode:normal;
+  }
+  .hero.blank{background:var(--accent-grad)}
+  .hero .edit{
+    position:absolute;right:16px;bottom:74px;
+    display:inline-flex;align-items:center;gap:6px;
+    padding:8px 14px;border-radius:999px;
+    background:rgba(26,25,24,.62);color:#fff;font-size:13px;backdrop-filter:blur(6px);
+  }
+
+  .title-block{margin-top:-46px;position:relative;z-index:2}
+  .title-block h1{
+    font-family:var(--serif);font-weight:900;
+    font-size:clamp(38px,11vw,52px);line-height:1.02;
+    letter-spacing:-.02em;margin:8px 0 6px;
+  }
+  .title-block p{color:var(--ink-2);font-size:14px;margin:0}
+
+  /* ---------- 統計 ---------- */
+  .stats{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    margin:22px 0 20px;
+    background:var(--paper-2);border:1px solid var(--line);border-radius:14px;
+    overflow:hidden;
+  }
+  .stats > div{padding:16px 8px;text-align:center;border-left:1px solid var(--line-soft)}
+  .stats > div:first-child{border-left:none}
+  .stats .num{font-family:var(--mono);font-weight:600;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
+  .stats .num.hl{color:var(--accent)}
+  .stats .lbl{font-size:11.5px;color:var(--ink-3);margin-top:4px}
+  .stats .sub{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:1px;letter-spacing:.02em}
+
+  /* ---------- 篩選 ---------- */
+  .filters{display:grid;gap:9px;margin-bottom:8px}
+  .row{
+    display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;
+    scrollbar-width:none;
+  }
+  .row::-webkit-scrollbar{display:none}
+  .chip{
+    flex:none;display:inline-flex;align-items:center;gap:6px;
+    height:36px;padding:0 14px;border-radius:999px;
+    border:1px solid var(--line);background:var(--paper-2);
+    font-size:13.5px;color:var(--ink-2);white-space:nowrap;
+    transition:background .15s,color .15s,border-color .15s;
+  }
+  .chip .av{width:22px;height:22px;border-radius:50%;object-fit:cover;margin-left:-6px}
+  .chip .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:700}
+  .chip.on .dot{background:var(--on-accent)}
+  .sortbar{display:flex;justify-content:flex-end;margin:4px 0 6px}
+
+  /* ---------- 時間軸 ---------- */
+  .timeline{position:relative;padding:14px 0 90px}
+  .timeline::before{
+    content:"";position:absolute;left:7px;top:0;bottom:60px;width:2px;
+    background:var(--accent-grad-v);
+    border-radius:2px;
+  }
+  .year{position:relative;padding:30px 0 6px 30px}
+  .year .ghost{
+    font-family:var(--serif);font-weight:900;font-size:64px;line-height:.9;
+    color:var(--accent-16);letter-spacing:-.03em;
+  }
+  .year .count{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.1em;margin-top:2px}
+
+  .moment{position:relative;padding:0 0 4px 30px}
+  .node{
+    position:absolute;left:0;top:16px;width:16px;height:16px;border-radius:50%;
+    background:var(--paper);border:2px solid var(--accent);
+    display:grid;place-items:center;
+  }
+  .node.star{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-size:9px}
+  .m-card{padding-bottom:14px;border-bottom:1px solid var(--line-soft)}
+  .m-inner{
+    padding:12px 0 2px;
+    text-align:left;width:100%;display:block;
+  }
+  .m-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .m-date{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--accent);letter-spacing:.04em}
+  .m-type{
+    font-size:11px;padding:1px 8px;border-radius:999px;
+    background:var(--accent-08);color:var(--ink-2);
+    display:inline-flex;align-items:center;gap:4px;
+  }
+  .m-title{
+    font-family:var(--serif);font-weight:700;font-size:18px;line-height:1.45;
+    margin:5px 0 0;
+  }
+  .m-title.big{font-size:21px}
+  .m-note{color:var(--ink-2);font-size:14px;margin:5px 0 0;white-space:pre-wrap}
+  .m-photo{margin-top:10px;border-radius:10px;width:100%;max-height:300px;object-fit:cover}
+  .m-members{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+  .tag{
+    font-size:11.5px;padding:2px 9px;border-radius:999px;
+    border:1px solid var(--line);color:var(--ink-2);
+  }
+  .m-link{
+    display:inline-flex;align-items:center;gap:5px;margin-top:9px;
+    font-size:12.5px;color:var(--accent);font-family:var(--mono);
+  }
+
+  /* 成員頭像 */
+  .chip .av{width:22px;height:22px;border-radius:50%;object-fit:cover;margin-left:-6px;flex:none}
+  .tag .av{width:15px;height:15px;border-radius:50%;object-fit:cover;margin-right:4px;vertical-align:-3px}
+  .tag{display:inline-flex;align-items:center}
+  .avatar-btn{
+    width:40px;height:40px;border-radius:50%;flex:none;overflow:hidden;
+    border:1px dashed var(--line);display:grid;place-items:center;
+    color:var(--ink-3);font-size:16px;background:var(--paper-2);
+  }
+  .avatar-btn img{width:100%;height:100%;object-fit:cover}
+
+  /* YouTube 縮圖 */
+  .yt-card{
+    display:block;position:relative;margin-top:10px;
+    border-radius:10px;overflow:hidden;border:1px solid var(--line);
+  }
+  .yt-card img{width:100%;aspect-ratio:16/9;object-fit:cover;background:#111}
+  .yt-play{position:absolute;inset:0;display:grid;place-items:center}
+  .yt-play i{font-size:46px;color:#fff;filter:drop-shadow(0 2px 10px rgba(0,0,0,.55))}
+  .yt-cap{
+    position:absolute;left:0;right:0;bottom:0;padding:6px 10px;
+    background:linear-gradient(to top, rgba(0,0,0,.72), transparent);
+    color:#fff;font-family:var(--mono);font-size:11px;
+  }
+
+  /* ---------- 空狀態 ---------- */
+  .empty{
+    text-align:center;padding:56px 24px;border:1px dashed var(--line);
+    border-radius:16px;margin:20px 0;
+  }
+  .empty .ic{font-size:38px;color:var(--accent);}
+  .empty h3{font-family:var(--serif);font-size:19px;margin:10px 0 4px}
+  .empty p{color:var(--ink-3);font-size:13.5px;margin:0 0 16px}
+
+  /* ---------- 表單 / 彈窗 ---------- */
+  .sheet-bg{
+    position:fixed;inset:0;z-index:80;background:rgba(26,25,24,.42);
+    display:flex;align-items:flex-end;justify-content:center;
+    animation:fade .18s ease;
+  }
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  @keyframes rise{from{transform:translateY(28px)}to{transform:translateY(0)}}
+  .sheet{
+    width:100%;max-width:640px;max-height:92vh;overflow-y:auto;
+    background:var(--paper);border-radius:20px 20px 0 0;
+    animation:rise .22s cubic-bezier(.2,.8,.3,1);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .sheet-head{
+    position:sticky;top:0;z-index:2;
+    display:flex;align-items:center;gap:10px;
+    padding:14px 18px;background:var(--paper);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .sheet-head h2{font-family:var(--serif);font-size:18px;margin:0;flex:1}
+  .sheet-body{padding:18px}
+
+  .field{margin-bottom:16px}
+  .field > label{
+    display:block;font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-3);margin-bottom:6px;
+  }
+  .field input[type=text],
+  .field input[type=date],
+  .field input[type=url],
+  .field textarea{
+    width:100%;padding:11px 13px;border-radius:10px;
+    border:1px solid var(--line);background:var(--paper-2);
+    outline:none;transition:border-color .15s;
+  }
+  .field input:focus,.field textarea:focus{border-color:var(--accent)}
+  .field textarea{min-height:88px;resize:vertical;line-height:1.6}
+  .hint{font-size:12px;color:var(--ink-3);margin-top:5px}
+
+  .swatches{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+  .sw{width:32px;height:32px;border-radius:50%;border:2px solid transparent;transition:transform .12s}
+  .sw.on{border-color:var(--ink);transform:scale(1.12)}
+  input[type=color]{
+    width:38px;height:38px;padding:0;border:1px solid var(--line);
+    border-radius:10px;background:none;cursor:pointer;
+  }
+
+  .member-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .member-row input{flex:1}
+
+  .actions{display:flex;gap:10px;padding:6px 0 24px}
+  .btn{
+    flex:1;height:48px;border-radius:12px;font-weight:700;
+    display:grid;place-items:center;
+  }
+  .btn.primary{background:var(--accent-grad);color:var(--on-accent)}
+  .grad-preview{height:26px;border-radius:999px;border:1px solid var(--line);margin:8px 0 4px}
+  .btn.quiet{border:1px solid var(--line);color:var(--ink-2)}
+  .btn.danger{color:#B4443C;border:1px solid rgba(180,68,60,.3)}
+
+  .banner{
+    font-family:var(--mono);font-size:11.5px;color:var(--ink-3);
+    text-align:center;padding:8px 20px;border-bottom:1px solid var(--line-soft);
+    background:var(--accent-08);
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important;transition:none !important}
+  }
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+  }
+}
+</script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+<script type="text/babel" data-type="module" data-presets="react">
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { initializeApp } from "firebase/app";
+import {
+  getFirestore, collection, doc, onSnapshot, query, where,
+  addDoc, setDoc, deleteDoc, getDocs
+} from "firebase/firestore";
+
+const { useState, useEffect, useMemo, useRef } = React;
+
+/* ==========================================================
+   1. Firebase 設定 —— 填入你自己的專案即可切換成雲端同步
+   ========================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyB8VmyWkFtzdGRIcMI0xK05DztPQetIhrQ",
+  authDomain: "ent-timeline.firebaseapp.com",
+  projectId: "ent-timeline",
+  storageBucket: "ent-timeline.firebasestorage.app",
+  messagingSenderId: "1086124544735",
+  appId: "1:1086124544735:web:cc2db56f1351e619aa8f6a"
+};
+
+const useCloud = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
+let db = null;
+if (useCloud) {
+  db = getFirestore(initializeApp(firebaseConfig));
+}
+
+/* ==========================================================
+   2. 資料層 —— 雲端與本機兩種實作，介面完全相同
+   ========================================================== */
+function makeCloudStore(db) {
+  const snap = (s) => s.docs.map((d) => ({ id: d.id, ...d.data() }));
+  return {
+    watchArtists: (cb) => onSnapshot(collection(db, "artists"), (s) => cb(snap(s))),
+    watchMoments: (artistId, cb) =>
+      onSnapshot(query(collection(db, "moments"), where("artistId", "==", artistId)), (s) => cb(snap(s))),
+    saveArtist: async (data, id) => {
+      if (id) { await setDoc(doc(db, "artists", id), data, { merge: true }); return id; }
+      const ref = await addDoc(collection(db, "artists"), data);
+      return ref.id;
+    },
+    removeArtist: async (id) => {
+      const s = await getDocs(query(collection(db, "moments"), where("artistId", "==", id)));
+      await Promise.all(s.docs.map((d) => deleteDoc(d.ref)));
+      await deleteDoc(doc(db, "artists", id));
+    },
+    saveMoment: async (data, id) => {
+      if (id) { await setDoc(doc(db, "moments", id), data, { merge: true }); return id; }
+      const ref = await addDoc(collection(db, "moments"), data);
+      return ref.id;
+    },
+    removeMoment: (id) => deleteDoc(doc(db, "moments", id))
+  };
+}
+
+function makeLocalStore() {
+  let artists = [];
+  let moments = [];
+  const artistSubs = new Set();
+  const momentSubs = new Map();
+  const uid = () => Math.random().toString(36).slice(2, 10);
+  const pushArtists = () => artistSubs.forEach((cb) => cb([...artists]));
+  const pushMoments = (aid) => {
+    const set = momentSubs.get(aid);
+    if (set) set.forEach((cb) => cb(moments.filter((m) => m.artistId === aid)));
+  };
+  return {
+    watchArtists(cb) {
+      artistSubs.add(cb); cb([...artists]);
+      return () => artistSubs.delete(cb);
+    },
+    watchMoments(artistId, cb) {
+      if (!momentSubs.has(artistId)) momentSubs.set(artistId, new Set());
+      momentSubs.get(artistId).add(cb);
+      cb(moments.filter((m) => m.artistId === artistId));
+      return () => momentSubs.get(artistId).delete(cb);
+    },
+    async saveArtist(data, id) {
+      if (id) { artists = artists.map((a) => (a.id === id ? { ...a, ...data } : a)); pushArtists(); return id; }
+      const nid = uid();
+      artists = [...artists, { id: nid, ...data }];
+      pushArtists();
+      return nid;
+    },
+    async removeArtist(id) {
+      artists = artists.filter((a) => a.id !== id);
+      moments = moments.filter((m) => m.artistId !== id);
+      pushArtists(); pushMoments(id);
+    },
+    async saveMoment(data, id) {
+      if (id) {
+        moments = moments.map((m) => (m.id === id ? { ...m, ...data } : m));
+        pushMoments(data.artistId); return id;
+      }
+      const nid = uid();
+      moments = [...moments, { id: nid, ...data }];
+      pushMoments(data.artistId);
+      return nid;
+    },
+    async removeMoment(id) {
+      const m = moments.find((x) => x.id === id);
+      moments = moments.filter((x) => x.id !== id);
+      if (m) pushMoments(m.artistId);
+    }
+  };
+}
+
+const store = useCloud ? makeCloudStore(db) : makeLocalStore();
+
+/* ==========================================================
+   3. 常數與小工具
+   ========================================================== */
+const TYPES = [
+  { id: "stage",    label: "演出", icon: "ph-microphone-stage" },
+  { id: "comeback", label: "回歸", icon: "ph-repeat" },
+  { id: "release",  label: "發行", icon: "ph-vinyl-record" },
+  { id: "birthday", label: "生日", icon: "ph-cake" },
+  { id: "live",     label: "直播", icon: "ph-video-camera" },
+  { id: "event",    label: "活動", icon: "ph-ticket" },
+  { id: "variety",  label: "綜藝", icon: "ph-television-simple" },
+  { id: "award",    label: "獎項", icon: "ph-trophy" },
+  { id: "other",    label: "其他", icon: "ph-sparkle" }
+];
+const typeOf = (id) => TYPES.find((t) => t.id === id) || TYPES[TYPES.length - 1];
+
+const ANCHORS = ["出道日", "首張作品", "入坑日", "成軍日"];
+
+const PRESET_COLORS = [
+  "#7C6BD8", "#E8546B", "#2F6F9E", "#D98B2B",
+  "#3F8F72", "#B04A7A", "#1A1918", "#C0553D"
+];
+
+const hexToRgb = (hex) => {
+  const h = (hex || "#7C6BD8").replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16) || 0);
+};
+const alpha = (hex, a) => {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${a})`;
+};
+const readableOn = (hex) => {
+  const [r, g, b] = hexToRgb(hex);
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.62 ? "#1A1918" : "#FFFFFF";
+};
+
+/* 應援色：一律以陣列處理，單色就是長度 1 的陣列 */
+const paletteOf = (a) =>
+  a?.colors?.length ? a.colors : [a?.color || PRESET_COLORS[0]];
+
+const gradientOf = (colors, dir = "135deg") => {
+  const list = colors?.length ? colors : [PRESET_COLORS[0]];
+  if (list.length === 1) return `linear-gradient(${dir}, ${list[0]}, ${list[0]})`;
+  return `linear-gradient(${dir}, ${list.join(", ")})`;
+};
+
+const todayISO = () => new Date().toISOString().slice(0, 10);
+const daysSince = (iso) => {
+  if (!iso) return null;
+  const then = new Date(iso + "T00:00:00");
+  if (isNaN(then)) return null;
+  return Math.max(0, Math.floor((Date.now() - then.getTime()) / 86400000));
+};
+
+/* 依實際日曆換算「N 年 M 天」，閏年不會偏移 */
+const yearsAndDays = (iso) => {
+  if (!iso) return null;
+  const start = new Date(iso + "T00:00:00");
+  const now = new Date();
+  if (isNaN(start) || start > now) return null;
+  let years = now.getFullYear() - start.getFullYear();
+  const mark = new Date(start);
+  mark.setFullYear(start.getFullYear() + years);
+  if (mark > now) {
+    years -= 1;
+    mark.setFullYear(start.getFullYear() + years);
+  }
+  const days = Math.floor((now - mark) / 86400000);
+  return { years, days };
+};
+
+const spanLabel = (iso) => {
+  const yd = yearsAndDays(iso);
+  if (!yd || yd.years < 1) return "";
+  return yd.years + " 年 " + yd.days + " 天";
+};
+
+const comma = (n) => n.toLocaleString("en-US");
+
+/* 從各種 YouTube 網址取出影片 ID：watch、youtu.be、shorts、embed、live */
+const youtubeId = (url) => {
+  if (!url) return "";
+  const s = url.trim();
+  const patterns = [
+    /(?:youtube\.com\/watch\?[^#]*\bv=)([\w-]{11})/,
+    /youtu\.be\/([\w-]{11})/,
+    /youtube\.com\/(?:shorts|embed|live|v)\/([\w-]{11})/
+  ];
+  for (const p of patterns) {
+    const m = s.match(p);
+    if (m) return m[1];
+  }
+  return "";
+};
+
+/* hqdefault 幾乎所有影片都有，maxres 常常 404，所以用前者 */
+const youtubeThumb = (id) => "https://img.youtube.com/vi/" + id + "/hqdefault.jpg";
+const youtubeWatch = (id) => "https://www.youtube.com/watch?v=" + id;
+const fmtDate = (iso) => (iso ? iso.replaceAll("-", ".") : "");
+const yearOf = (iso) => (iso || "").slice(0, 4) || "未定";
+
+async function compressImage(file, maxSide = 1000, quality = 0.72) {
+  const dataUrl = await new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = () => rej(new Error("讀取失敗"));
+    r.readAsDataURL(file);
+  });
+  const img = await new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = () => rej(new Error("解析失敗"));
+    i.src = dataUrl;
+  });
+  const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+  const cv = document.createElement("canvas");
+  cv.width = Math.round(img.width * scale);
+  cv.height = Math.round(img.height * scale);
+  cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+  return cv.toDataURL("image/jpeg", quality);
+}
+
+/* ==========================================================
+   4. 共用元件
+   ========================================================== */
+function Sheet({ title, onClose, children }) {
+  useEffect(() => {
+    const esc = (e) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", esc);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", esc);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+  return (
+    <div className="sheet-bg" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="sheet">
+        <div className="sheet-head">
+          <h2>{title}</h2>
+          <button className="iconbtn" onClick={onClose} aria-label="關閉">
+            <i className="ph-duotone ph-x" />
+          </button>
+        </div>
+        <div className="sheet-body">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+/* 成員頭像：小尺寸圓形，壓到 200px 就夠用，不會撐爆文件大小 */
+function AvatarButton({ value, onChange, label }) {
+  const ref = useRef(null);
+  const pick = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try { onChange(await compressImage(f, 200, 0.7)); }
+    catch { alert("這張圖讀不進來，換一張試試。"); }
+    e.target.value = "";
+  };
+  return (
+    <>
+      <button type="button" className="avatar-btn"
+        onClick={() => (value ? onChange("") : ref.current.click())}
+        title={value ? "點一下移除頭像" : "選擇頭像"}
+        aria-label={label || "頭像"}>
+        {value ? <img src={value} alt="" /> : <i className="ph-duotone ph-user-circle-plus" />}
+      </button>
+      <input ref={ref} type="file" accept="image/*" onChange={pick} style={{ display: "none" }} />
+    </>
+  );
+}
+
+function ImagePicker({ value, onChange, label, hint }) {
+  const fileRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const pick = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setBusy(true);
+    try { onChange(await compressImage(f)); }
+    catch { alert("這張圖讀不進來，換一張試試。"); }
+    setBusy(false);
+    e.target.value = "";
+  };
+  return (
+    <div className="field">
+      <label>{label}</label>
+      {value && (
+        <img src={value} alt="" style={{ borderRadius: 10, marginBottom: 8, maxHeight: 160, width: "100%", objectFit: "cover" }} />
+      )}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="button" className="chip" onClick={() => fileRef.current.click()}>
+          <i className="ph-duotone ph-image" />{busy ? "處理中…" : value ? "換一張" : "選擇圖片"}
+        </button>
+        {value && (
+          <button type="button" className="chip" onClick={() => onChange("")}>
+            <i className="ph-duotone ph-trash" />移除
+          </button>
+        )}
+      </div>
+      <input ref={fileRef} type="file" accept="image/*" onChange={pick} style={{ display: "none" }} />
+      {hint && <p className="hint">{hint}</p>}
+    </div>
+  );
+}
+
+/* ==========================================================
+   5. 藝人表單
+   ========================================================== */
+function ArtistForm({ initial, onSave, onDelete, onClose }) {
+  const [name, setName] = useState(initial?.name || "");
+  const [tagline, setTagline] = useState(initial?.tagline || "");
+  const [colors, setColors] = useState(paletteOf(initial));
+  const color = colors[0];
+  const [cover, setCover] = useState(initial?.cover || "");
+  const [anchorLabel, setAnchorLabel] = useState(initial?.anchorLabel || "出道日");
+  const [anchorDate, setAnchorDate] = useState(initial?.anchorDate || "");
+  const [members, setMembers] = useState(initial?.members?.length ? initial.members : []);
+
+  const setColorAt = (i, v) => setColors((cs) => cs.map((c, k) => (k === i ? v : c)));
+  const addColor = () => setColors((cs) => (cs.length >= 6 ? cs : [...cs, cs[cs.length - 1]]));
+  const dropColor = (i) => setColors((cs) => (cs.length <= 1 ? cs : cs.filter((_, k) => k !== i)));
+
+  const setMember = (i, patch) =>
+    setMembers((ms) => ms.map((m, k) => (k === i ? { ...m, ...patch } : m)));
+  const addMember = () => setMembers((ms) => [...ms, { name: "", color: color }]);
+  const dropMember = (i) => setMembers((ms) => ms.filter((_, k) => k !== i));
+
+  const submit = () => {
+    if (!name.trim()) return alert("先給這位藝人一個名字。");
+    onSave({
+      name: name.trim(),
+      tagline: tagline.trim(),
+      colors,
+      color: colors[0],
+      cover,
+      anchorLabel,
+      anchorDate,
+      members: members
+        .filter((m) => m.name.trim())
+        .map((m) => ({ name: m.name.trim(), color: m.color || colors[0], avatar: m.avatar || "" }))
+    });
+  };
+
+  return (
+    <Sheet title={initial ? "編輯藝人" : "新增藝人"} onClose={onClose}>
+      <div className="field">
+        <label>名稱</label>
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="團名或歌手名" />
+      </div>
+
+      <div className="field">
+        <label>一句話</label>
+        <input type="text" value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder="從出道到現在的大小回憶。" />
+      </div>
+
+      <div className="field">
+        <label>應援色</label>
+        <div className="grad-preview" style={{ background: gradientOf(colors, "90deg") }} />
+        {colors.map((c, i) => (
+          <div className="member-row" key={i}>
+            <input type="color" value={c} onChange={(e) => setColorAt(i, e.target.value)}
+              aria-label={"第 " + (i + 1) + " 色"} />
+            <span style={{ flex: 1, fontSize: 13, color: "var(--ink-3)", fontFamily: "var(--mono)" }}>
+              {i === 0 ? "主色 " : "第 " + (i + 1) + " 色 "}{c.toUpperCase()}
+            </span>
+            {colors.length > 1 && (
+              <button type="button" className="iconbtn" onClick={() => dropColor(i)} aria-label="移除這個顏色">
+                <i className="ph-duotone ph-minus-circle" />
+              </button>
+            )}
+          </div>
+        ))}
+        {colors.length < 6 && (
+          <button type="button" className="chip" onClick={addColor}>
+            <i className="ph-duotone ph-plus" />加一個顏色
+          </button>
+        )}
+        <div className="swatches" style={{ marginTop: 10 }}>
+          {PRESET_COLORS.map((c) => (
+            <button key={c} type="button" className={"sw" + (c === color ? " on" : "")}
+              style={{ background: c }} onClick={() => setColorAt(0, c)} aria-label={"主色設為 " + c} />
+          ))}
+        </div>
+        <p className="hint">
+          單色團就留一個。雙色漸變、五色成員色都可以疊上去，最多六色。
+          主色會用在文字、日期與圖示；整組顏色會用在封面、時間軸軸線與按鈕。
+        </p>
+      </div>
+
+      <ImagePicker label="封面照" value={cover} onChange={setCover} hint="會自動壓縮，並以黑白呈現讓應援色更突出。" />
+
+      <div className="field">
+        <label>起算日</label>
+        <div className="row" style={{ marginBottom: 8 }}>
+          {ANCHORS.map((a) => (
+            <button key={a} type="button" className={"chip" + (a === anchorLabel ? " on" : "")}
+              onClick={() => setAnchorLabel(a)}>{a}</button>
+          ))}
+        </div>
+        <input type="date" value={anchorDate} onChange={(e) => setAnchorDate(e.target.value)} />
+        <p className="hint">歐美歌手沒有「出道日」的話，用首張作品或入坑日都可以。</p>
+      </div>
+
+      <div className="field">
+        <label>成員</label>
+        {members.map((m, i) => (
+          <div className="member-row" key={i}>
+            <AvatarButton value={m.avatar || ""} label={m.name || "成員 " + (i + 1)}
+              onChange={(v) => setMember(i, { avatar: v })} />
+            <input type="text" value={m.name} placeholder={"成員 " + (i + 1)}
+              onChange={(e) => setMember(i, { name: e.target.value })} />
+            <input type="color" value={m.color || color}
+              onChange={(e) => setMember(i, { color: e.target.value })} aria-label="成員色" />
+            <button type="button" className="iconbtn" onClick={() => dropMember(i)} aria-label="刪除成員">
+              <i className="ph-duotone ph-minus-circle" />
+            </button>
+          </div>
+        ))}
+        <button type="button" className="chip" onClick={addMember}>
+          <i className="ph-duotone ph-plus" />加一位成員
+        </button>
+        <p className="hint">
+          頭像選好後再點一下可以移除。solo 歌手可以整段留空，成員篩選會自動隱藏。
+        </p>
+      </div>
+
+      <div className="actions">
+        {initial && (
+          <button className="btn danger" onClick={() => {
+            if (confirm("刪除「" + initial.name + "」會一併刪掉所有回憶，確定嗎？")) onDelete();
+          }}>刪除</button>
+        )}
+        <button className="btn primary" onClick={submit}>{initial ? "儲存" : "建立"}</button>
+      </div>
+    </Sheet>
+  );
+}
+
+/* ==========================================================
+   6. 回憶表單
+   ========================================================== */
+function MomentForm({ artist, initial, onSave, onDelete, onClose }) {
+  const [date, setDate] = useState(initial?.date || todayISO());
+  const [type, setType] = useState(initial?.type || "stage");
+  const [title, setTitle] = useState(initial?.title || "");
+  const [note, setNote] = useState(initial?.note || "");
+  const [link, setLink] = useState(initial?.link || "");
+  const [photo, setPhoto] = useState(initial?.photo || "");
+  const [milestone, setMilestone] = useState(Boolean(initial?.milestone));
+  const [tagged, setTagged] = useState(initial?.members || []);
+  const ytId = youtubeId(link);
+
+  const toggleMember = (n) =>
+    setTagged((t) => (t.includes(n) ? t.filter((x) => x !== n) : [...t, n]));
+
+  const submit = () => {
+    if (!title.trim()) return alert("先寫下這個回憶的標題。");
+    if (!date) return alert("選一個日期。");
+    onSave({
+      artistId: artist.id,
+      date, type,
+      title: title.trim(),
+      note: note.trim(),
+      link: link.trim(),
+      photo,
+      milestone,
+      members: tagged
+    });
+  };
+
+  return (
+    <Sheet title={initial ? "編輯回憶" : "增加回憶"} onClose={onClose}>
+      <div className="field">
+        <label>日期</label>
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+      </div>
+
+      <div className="field">
+        <label>類型</label>
+        <div className="row">
+          {TYPES.map((t) => (
+            <button key={t.id} type="button" className={"chip" + (t.id === type ? " on" : "")}
+              onClick={() => setType(t.id)}>
+              <i className={"ph-duotone " + t.icon} />{t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="field">
+        <label>標題</label>
+        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
+          placeholder="例：第一次進場看演唱會" />
+      </div>
+
+      <div className="field">
+        <label>筆記</label>
+        <textarea value={note} onChange={(e) => setNote(e.target.value)}
+          placeholder="當下的感覺、座位、跟誰去、記得的細節…" />
+      </div>
+
+      {artist.members?.length > 0 && (
+        <div className="field">
+          <label>相關成員</label>
+          <div className="row">
+            {artist.members.map((m) => (
+              <button key={m.name} type="button"
+                className={"chip" + (tagged.includes(m.name) ? " on" : "")}
+                onClick={() => toggleMember(m.name)}>
+                {m.avatar
+                  ? <img className="av" src={m.avatar} alt="" />
+                  : <span className="dot" style={{ background: tagged.includes(m.name) ? undefined : m.color }} />}
+                {m.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <ImagePicker label="照片" value={photo} onChange={setPhoto} />
+
+      <div className="field">
+        <label>連結</label>
+        <input type="url" value={link} onChange={(e) => setLink(e.target.value)}
+          placeholder="YouTube 影片、貼文或購票紀錄" />
+        {ytId ? (
+          <>
+            <div className="yt-card" style={{ marginTop: 10 }}>
+              <img src={youtubeThumb(ytId)} alt="" />
+              <span className="yt-play"><i className="ph-fill ph-play-circle" /></span>
+            </div>
+            <p className="hint">認出 YouTube 影片了，縮圖會直接顯示在時間軸上。</p>
+          </>
+        ) : (
+          <p className="hint">貼上 YouTube 連結會自動抓縮圖，其他網址則顯示為文字連結。</p>
+        )}
+      </div>
+
+      <div className="field">
+        <button type="button" className={"chip" + (milestone ? " on" : "")}
+          onClick={() => setMilestone((v) => !v)}>
+          <i className={milestone ? "ph-fill ph-star" : "ph-duotone ph-star"} />標記為大事記
+        </button>
+        <p className="hint">大事記會在時間軸上以實心節點highlight。</p>
+      </div>
+
+      <div className="actions">
+        {initial && (
+          <button className="btn danger" onClick={() => {
+            if (confirm("刪除這則回憶？")) onDelete();
+          }}>刪除</button>
+        )}
+        <button className="btn primary" onClick={submit}>{initial ? "儲存" : "加入時間軸"}</button>
+      </div>
+    </Sheet>
+  );
+}
+
+/* ==========================================================
+   7. 藝人書架（首頁）
+   ========================================================== */
+function Shelf({ artists, onOpen, onNew, onDemo }) {
+  return (
+    <>
+      <div className="topbar">
+        <span className="eyebrow" style={{ color: "var(--ink-3)" }}>MY IDOLS</span>
+        <div className="spacer" />
+        <button className="pill" onClick={onNew}>
+          <i className="ph-duotone ph-plus" />新增藝人
+        </button>
+      </div>
+      <div className="wrap">
+        <div className="shelf-head">
+          <span className="eyebrow">IDOL TIMELINE</span>
+          <h1>我追的人</h1>
+          <p className="muted" style={{ margin: 0, fontSize: 14 }}>
+            每一位都有自己的應援色與時間軸。
+          </p>
+        </div>
+
+        {artists.length === 0 ? (
+          <div className="empty">
+            <i className="ph-duotone ph-star-four ic" />
+            <h3>還沒有人在這裡</h3>
+            <p>先加入一組韓團或一位歌手，再開始往回補回憶。</p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+              <button className="pill" onClick={onNew}>
+                <i className="ph-duotone ph-plus" />新增藝人
+              </button>
+              <button className="pill ghost" onClick={onDemo}>載入示範資料</button>
+            </div>
+          </div>
+        ) : (
+          <div className="shelf">
+            {artists.map((a) => {
+              const days = daysSince(a.anchorDate);
+              const span = spanLabel(a.anchorDate);
+              const grad = gradientOf(paletteOf(a), "to bottom");
+              return (
+                <button key={a.id} className="artist-card" onClick={() => onOpen(a.id)}>
+                  <span className="stripe" style={{ background: grad }} />
+                  {a.cover ? (
+                    <img className="thumb" src={a.cover} alt="" />
+                  ) : (
+                    <span className="thumb empty" style={{ background: gradientOf(paletteOf(a), "135deg") }}>
+                      <i className="ph-duotone ph-music-notes-simple" />
+                    </span>
+                  )}
+                  <span className="body">
+                    <span className="name">{a.name}</span>
+                    <span className="meta">
+                      {days !== null
+                        ? a.anchorLabel + " " + comma(days) + " 天" + (span ? "（" + span + "）" : "")
+                        : "尚未設定起算日"}
+                      {a.members?.length ? " · " + a.members.length + " 位成員" : ""}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+/* ==========================================================
+   8. 時間軸（藝人頁）
+   ========================================================== */
+function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMoment }) {
+  const [member, setMember] = useState("all");
+  const [type, setType] = useState("all");
+  const [asc, setAsc] = useState(true);
+
+  const palette = paletteOf(artist);
+  const paletteKey = palette.join(",");
+
+  useEffect(() => {
+    const list = paletteKey.split(",");
+    const main = list[0];
+    const r = document.documentElement.style;
+    r.setProperty("--accent", main);
+    r.setProperty("--accent-08", alpha(main, 0.08));
+    r.setProperty("--accent-16", alpha(main, 0.16));
+    r.setProperty("--accent-32", alpha(main, 0.32));
+    r.setProperty("--on-accent", readableOn(main));
+    r.setProperty("--accent-grad", gradientOf(list, "135deg"));
+    r.setProperty("--accent-grad-v", gradientOf(list, "to bottom"));
+  }, [paletteKey]);
+
+  const filtered = useMemo(() => {
+    let list = moments.filter((m) => {
+      if (type !== "all" && m.type !== type) return false;
+      if (member !== "all" && !(m.members || []).includes(member)) return false;
+      return true;
+    });
+    list.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    if (!asc) list.reverse();
+    return list;
+  }, [moments, type, member, asc]);
+
+  const grouped = useMemo(() => {
+    const out = [];
+    filtered.forEach((m) => {
+      const y = yearOf(m.date);
+      const last = out[out.length - 1];
+      if (last && last.year === y) last.items.push(m);
+      else out.push({ year: y, items: [m] });
+    });
+    return out;
+  }, [filtered]);
+
+  const days = daysSince(artist.anchorDate);
+  const span = spanLabel(artist.anchorDate);
+  const milestones = moments.filter((m) => m.milestone).length;
+
+  return (
+    <>
+      <div className="topbar">
+        <button className="iconbtn" onClick={onBack} aria-label="返回">
+          <i className="ph-duotone ph-caret-left" />
+        </button>
+        <span style={{ fontWeight: 700, fontSize: 15 }}>{artist.name}</span>
+        <div className="spacer" />
+        <button className="iconbtn" onClick={onEditArtist} aria-label="編輯藝人">
+          <i className="ph-duotone ph-palette" />
+        </button>
+        <button className="pill" onClick={onNewMoment}>
+          <i className="ph-duotone ph-plus" />增加回憶
+        </button>
+      </div>
+
+      <div className={"hero" + (artist.cover ? "" : " blank")}>
+        {artist.cover && <img src={artist.cover} alt="" />}
+        <div className="wash" />
+      </div>
+
+      <div className="wrap">
+        <div className="title-block">
+          <span className="eyebrow">IDOL TIMELINE</span>
+          <h1>{artist.name}</h1>
+          <p>{artist.tagline || "從第一天到現在的大小回憶。"}</p>
+        </div>
+
+        <div className="stats">
+          <div>
+            <div className="num hl">{days !== null ? comma(days) : "—"}</div>
+            <div className="lbl">{artist.anchorLabel || "出道日"}天數</div>
+            {span && <div className="sub">{span}</div>}
+          </div>
+          <div>
+            <div className="num">{milestones}</div>
+            <div className="lbl">大事記</div>
+          </div>
+          <div>
+            <div className="num">{moments.length}</div>
+            <div className="lbl">回憶時刻</div>
+          </div>
+        </div>
+
+        <div className="filters">
+          {artist.members?.length > 0 && (
+            <div className="row">
+              <button className={"chip" + (member === "all" ? " on" : "")} onClick={() => setMember("all")}>
+                全部成員
+              </button>
+              {artist.members.map((m) => (
+                <button key={m.name} className={"chip" + (member === m.name ? " on" : "")}
+                  onClick={() => setMember(m.name)}>
+                  {m.avatar
+                    ? <img className="av" src={m.avatar} alt="" />
+                    : <span className="dot" style={{ background: member === m.name ? undefined : m.color }} />}
+                  {m.name}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="row">
+            <button className={"chip" + (type === "all" ? " on" : "")} onClick={() => setType("all")}>
+              全部類型
+            </button>
+            {TYPES.map((t) => (
+              <button key={t.id} className={"chip" + (type === t.id ? " on" : "")} onClick={() => setType(t.id)}>
+                <i className={"ph-duotone " + t.icon} />{t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="sortbar">
+          <button className="chip" onClick={() => setAsc((v) => !v)}>
+            <i className="ph-duotone ph-arrows-down-up" />
+            {asc ? "舊 → 新" : "新 → 舊"}
+          </button>
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="empty">
+            <i className="ph-duotone ph-clock-counter-clockwise ic" />
+            <h3>{moments.length === 0 ? "時間軸還是空的" : "這個條件下沒有回憶"}</h3>
+            <p>
+              {moments.length === 0
+                ? "從最想記住的那一天開始寫，順序之後會自動排好。"
+                : "換一個成員或類型再看看。"}
+            </p>
+            {moments.length === 0 && (
+              <button className="pill" onClick={onNewMoment}>
+                <i className="ph-duotone ph-plus" />增加回憶
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="timeline">
+            {grouped.map((g) => (
+              <React.Fragment key={g.year}>
+                <div className="year">
+                  <div className="ghost">{g.year}</div>
+                  <div className="count">{g.items.length} 個回憶</div>
+                </div>
+                {g.items.map((m) => {
+                  const t = typeOf(m.type);
+                  const yt = youtubeId(m.link);
+                  const avatarOf = (n) => artist.members?.find((x) => x.name === n)?.avatar;
+                  return (
+                    <div className="moment" key={m.id}>
+                      <span className={"node" + (m.milestone ? " star" : "")}>
+                        {m.milestone && <i className="ph-fill ph-star" />}
+                      </span>
+                      <div className="m-card">
+                        <button className="m-inner" onClick={() => onEditMoment(m)}>
+                          <span className="m-head">
+                            <span className="m-date">{fmtDate(m.date)}</span>
+                            <span className="m-type"><i className={"ph-duotone " + t.icon} />{t.label}</span>
+                          </span>
+                          <span className={"m-title" + (m.milestone ? " big" : "")} style={{ display: "block" }}>
+                            {m.title}
+                          </span>
+                          {m.note && <span className="m-note" style={{ display: "block" }}>{m.note}</span>}
+                          {m.members?.length > 0 && (
+                            <span className="m-members">
+                              {m.members.map((n) => (
+                                <span className="tag" key={n}>
+                                  {avatarOf(n) && <img className="av" src={avatarOf(n)} alt="" />}
+                                  {n}
+                                </span>
+                              ))}
+                            </span>
+                          )}
+                          {m.photo && <img className="m-photo" src={m.photo} alt="" />}
+                        </button>
+
+                        {yt ? (
+                          <a className="yt-card" href={youtubeWatch(yt)} target="_blank" rel="noopener noreferrer">
+                            <img src={youtubeThumb(yt)} alt="" loading="lazy" />
+                            <span className="yt-play"><i className="ph-fill ph-play-circle" /></span>
+                            <span className="yt-cap">在 YouTube 開啟</span>
+                          </a>
+                        ) : m.link ? (
+                          <a className="m-link" href={m.link} target="_blank" rel="noopener noreferrer">
+                            <i className="ph-duotone ph-link-simple" />開啟連結
+                          </a>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </React.Fragment>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+/* ==========================================================
+   9. 主應用
+   ========================================================== */
+function App() {
+  const [artists, setArtists] = useState([]);
+  const [activeId, setActiveId] = useState(null);
+  const [moments, setMoments] = useState([]);
+  const [artistForm, setArtistForm] = useState(null);   // {mode, data}
+  const [momentForm, setMomentForm] = useState(null);   // {data}
+
+  useEffect(() => store.watchArtists(setArtists), []);
+
+  useEffect(() => {
+    if (!activeId) { setMoments([]); return; }
+    return store.watchMoments(activeId, setMoments);
+  }, [activeId]);
+
+  const active = artists.find((a) => a.id === activeId) || null;
+
+  useEffect(() => {
+    if (active) return;
+    const r = document.documentElement.style;
+    r.setProperty("--accent", "#7C6BD8");
+    r.setProperty("--accent-08", alpha("#7C6BD8", 0.08));
+    r.setProperty("--accent-16", alpha("#7C6BD8", 0.16));
+    r.setProperty("--accent-32", alpha("#7C6BD8", 0.32));
+    r.setProperty("--on-accent", "#fff");
+    r.setProperty("--accent-grad", gradientOf(["#7C6BD8"], "135deg"));
+    r.setProperty("--accent-grad-v", gradientOf(["#7C6BD8"], "to bottom"));
+  }, [active]);
+
+  const loadDemo = async () => {
+    const id = await store.saveArtist({
+      name: "SEVEN LANE",
+      tagline: "從出道到現在的大小回憶。",
+      colors: ["#8EB4E8", "#C3AEDD"],
+      color: "#8EB4E8",
+      cover: "",
+      anchorLabel: "出道日",
+      anchorDate: "2024-08-16",
+      members: [
+        { name: "河潤", color: "#2F6F9E" },
+        { name: "李在旻", color: "#D98B2B" },
+        { name: "崔星", color: "#B04A7A" }
+      ]
+    });
+    const demo = [
+      { date: "2024-08-16", type: "release", title: "出道專輯《First Lane》發行", milestone: true, note: "凌晨守首播，聽到第三首就知道要栽了。", members: [] },
+      { date: "2024-09-05", type: "stage", title: "音樂節目首次一位", milestone: true, note: "", members: ["河潤"] },
+      { date: "2025-01-20", type: "variety", title: "綜藝出演：週末露營特輯", milestone: false, note: "李在旻煮泡麵那段重看了五次。", members: ["李在旻"] },
+      { date: "2025-04-12", type: "stage", title: "首爾場演唱會（我進場了）", milestone: true, note: "紅眼班機值得。應援海變成一片藍。", members: [] },
+      { date: "2025-11-03", type: "birthday", title: "崔星生日應援", milestone: false, note: "", members: ["崔星"] }
+    ];
+    for (const m of demo) await store.saveMoment({ ...m, artistId: id, link: "", photo: "" });
+  };
+
+  return (
+    <>
+      {!useCloud && (
+        <div className="banner">
+          示範模式 — 資料只留在這次開啟的頁面。填入 firebaseConfig 即可開始雲端同步。
+        </div>
+      )}
+
+      {active ? (
+        <Timeline
+          artist={active}
+          moments={moments}
+          onBack={() => setActiveId(null)}
+          onEditArtist={() => setArtistForm({ data: active })}
+          onNewMoment={() => setMomentForm({ data: null })}
+          onEditMoment={(m) => setMomentForm({ data: m })}
+        />
+      ) : (
+        <Shelf
+          artists={artists}
+          onOpen={setActiveId}
+          onNew={() => setArtistForm({ data: null })}
+          onDemo={loadDemo}
+        />
+      )}
+
+      {artistForm && (
+        <ArtistForm
+          initial={artistForm.data}
+          onClose={() => setArtistForm(null)}
+          onSave={async (data) => {
+            const id = await store.saveArtist(data, artistForm.data?.id);
+            setArtistForm(null);
+            if (!artistForm.data) setActiveId(id);
+          }}
+          onDelete={async () => {
+            await store.removeArtist(artistForm.data.id);
+            setArtistForm(null);
+            setActiveId(null);
+          }}
+        />
+      )}
+
+      {momentForm && active && (
+        <MomentForm
+          artist={active}
+          initial={momentForm.data}
+          onClose={() => setMomentForm(null)}
+          onSave={async (data) => {
+            await store.saveMoment(data, momentForm.data?.id);
+            setMomentForm(null);
+          }}
+          onDelete={async () => {
+            await store.removeMoment(momentForm.data.id);
+            setMomentForm(null);
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+createRoot(document.getElementById("root")).render(<App />);
+
+/* 註冊 service worker（file:// 開啟時會失敗，屬正常） */
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
