@@ -36,6 +36,7 @@
     --accent-08:rgba(124,107,216,.08);
     --accent-16:rgba(124,107,216,.16);
     --accent-32:rgba(124,107,216,.32);
+    --accent-wash:rgba(124,107,216,.22);
     --on-accent:#fff;
     --accent-grad:linear-gradient(135deg,#7C6BD8,#7C6BD8);
     --accent-grad-v:linear-gradient(to bottom,#7C6BD8,#7C6BD8);
@@ -109,8 +110,9 @@
   .artist-card:active{transform:scale(.99)}
   .artist-card .stripe{width:6px;flex:none}
   .artist-card .thumb{
-    width:82px;height:82px;flex:none;object-fit:cover;filter:grayscale(1) contrast(1.05);
+    width:82px;height:82px;flex:none;object-fit:cover;
   }
+  .artist-card .thumb.mono{filter:grayscale(1) contrast(1.06)}
   .artist-card .thumb.empty{display:grid;place-items:center;font-size:24px;color:#fff}
   .artist-card .body{flex:1;min-width:0;padding:12px 14px}
   .artist-card .name{
@@ -121,13 +123,13 @@
 
   /* ---------- Hero ---------- */
   .hero{position:relative;height:290px;overflow:hidden;background:var(--ink)}
-  .hero img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.08)}
+  .hero img{width:100%;height:100%;object-fit:cover}
+  .hero.mono img{filter:grayscale(1) contrast(1.06)}
   .hero .wash{
     position:absolute;inset:0;
     background:
-      linear-gradient(to top, var(--paper) 0%, rgba(251,250,248,.72) 14%, transparent 52%),
-      linear-gradient(200deg, var(--accent-32), transparent 62%);
-    mix-blend-mode:normal;
+      linear-gradient(to top, var(--paper) 0%, rgba(251,250,248,.55) 9%, transparent 30%),
+      linear-gradient(200deg, var(--accent-wash), transparent 55%);
   }
   .hero.blank{background:var(--accent-grad)}
   .hero .edit{
@@ -224,6 +226,50 @@
     font-size:11.5px;padding:2px 9px;border-radius:999px;
     border:1px solid var(--line);color:var(--ink-2);
   }
+  /* 專輯期標籤 */
+  .era-tag{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;
+    color:var(--ink-3);border:1px solid var(--line);
+    padding:1px 8px;border-radius:999px;
+  }
+
+  /* 打歌舞台：折疊面板 */
+  .stage-toggle{
+    display:inline-flex;align-items:center;gap:6px;margin-top:9px;
+    font-family:var(--mono);font-size:12px;color:var(--accent);
+    padding:5px 11px;border-radius:999px;background:var(--accent-08);
+  }
+  .stage-toggle i{transition:transform .18s}
+  .stage-toggle.open i.caret{transform:rotate(180deg)}
+  .stage-panel{margin-top:10px;border-left:2px solid var(--accent-16);padding-left:12px}
+  .song-row{padding:8px 0;border-bottom:1px dashed var(--line-soft)}
+  .song-row:last-child{border-bottom:none}
+  .song-name{font-family:var(--serif);font-weight:700;font-size:15px}
+  .cam-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .cam-link{
+    display:inline-flex;align-items:center;gap:4px;
+    font-family:var(--mono);font-size:11.5px;
+    padding:3px 9px;border-radius:999px;
+    border:1px solid var(--line);color:var(--ink-2);
+  }
+  .cam-link.full{border-color:var(--accent-32);color:var(--accent)}
+  .cam-link .av{width:14px;height:14px;border-radius:50%;object-fit:cover}
+  .cam-none{font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+
+  /* 歌曲編輯 */
+  .song-card{
+    border:1px solid var(--line);border-radius:12px;
+    padding:12px;margin-bottom:10px;background:var(--paper-2);
+  }
+  .song-card input{margin-bottom:8px}
+  .cam-edit{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .cam-edit .who{
+    display:flex;align-items:center;gap:5px;width:82px;flex:none;
+    font-size:12.5px;color:var(--ink-2);
+  }
+  .cam-edit .who img{width:20px;height:20px;border-radius:50%;object-fit:cover}
+  .cam-edit input{flex:1;min-width:0;margin-bottom:0;padding:7px 9px;font-size:13px}
+
   .m-link{
     display:inline-flex;align-items:center;gap:5px;margin-top:9px;
     font-size:12.5px;color:var(--accent);font-family:var(--mono);
@@ -500,6 +546,15 @@ const readableOn = (hex) => {
   return lum > 0.62 ? "#1A1918" : "#FFFFFF";
 };
 
+/* 淡色應援色疊在照片上很容易把人洗白，所以亮度越高覆蓋越淡 */
+const washAlpha = (hex) => {
+  const [r, g, b] = hexToRgb(hex);
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  if (lum > 0.75) return 0.10;
+  if (lum > 0.55) return 0.16;
+  return 0.26;
+};
+
 /* 應援色：一律以陣列處理，單色就是長度 1 的陣列 */
 const paletteOf = (a) =>
   a?.colors?.length ? a.colors : [a?.color || PRESET_COLORS[0]];
@@ -562,6 +617,30 @@ const youtubeId = (url) => {
 /* hqdefault 幾乎所有影片都有，maxres 常常 404，所以用前者 */
 const youtubeThumb = (id) => "https://img.youtube.com/vi/" + id + "/hqdefault.jpg";
 const youtubeWatch = (id) => "https://www.youtube.com/watch?v=" + id;
+
+/* 打歌舞台：一則回憶可以掛多首歌，每首歌有 FullCam 與各成員的 FanCam / FaceCam
+   cams 以成員名為 key：{ "文秀雅": { fan: "...", face: "" } } */
+const emptySong = () => ({ name: "", fullCam: "", cams: {} });
+
+const normalizeUrl = (u) => {
+  const s = (u || "").trim();
+  if (!s) return "";
+  if (/^https?:\/\//i.test(s)) return s;
+  return "https://" + s;   // 表格裡常常只寫 youtu.be/xxxx
+};
+
+/* 算出一則回憶總共掛了幾條影片連結，用在折疊按鈕的說明文字 */
+const countCams = (songs) => {
+  let n = 0;
+  (songs || []).forEach((s) => {
+    if (s.fullCam) n += 1;
+    Object.values(s.cams || {}).forEach((c) => {
+      if (c?.fan) n += 1;
+      if (c?.face) n += 1;
+    });
+  });
+  return n;
+};
 const fmtDate = (iso) => (iso ? iso.replaceAll("-", ".") : "");
 const yearOf = (iso) => (iso || "").slice(0, 4) || "未定";
 
@@ -680,6 +759,7 @@ function ArtistForm({ initial, onSave, onDelete, onClose }) {
   const [colors, setColors] = useState(paletteOf(initial));
   const color = colors[0];
   const [cover, setCover] = useState(initial?.cover || "");
+  const [mono, setMono] = useState(Boolean(initial?.mono));
   const [anchorLabel, setAnchorLabel] = useState(initial?.anchorLabel || "出道日");
   const [anchorDate, setAnchorDate] = useState(initial?.anchorDate || "");
   const [members, setMembers] = useState(initial?.members?.length ? initial.members : []);
@@ -701,6 +781,7 @@ function ArtistForm({ initial, onSave, onDelete, onClose }) {
       colors,
       color: colors[0],
       cover,
+      mono,
       anchorLabel,
       anchorDate,
       members: members
@@ -755,7 +836,15 @@ function ArtistForm({ initial, onSave, onDelete, onClose }) {
         </p>
       </div>
 
-      <ImagePicker label="封面照" value={cover} onChange={setCover} hint="會自動壓縮，並以黑白呈現讓應援色更突出。" />
+      <ImagePicker label="封面照" value={cover} onChange={setCover} />
+      <div className="field" style={{ marginTop: -6 }}>
+        <button type="button" className={"chip" + (mono ? " on" : "")} onClick={() => setMono((v) => !v)}>
+          <i className="ph-duotone ph-circle-half" />封面轉黑白
+        </button>
+        <p className="hint">
+          深色應援色配黑白照很好看；淡色系建議保留原色，不然人物容易被洗得沒血色。
+        </p>
+      </div>
 
       <div className="field">
         <label>起算日</label>
@@ -807,7 +896,7 @@ function ArtistForm({ initial, onSave, onDelete, onClose }) {
 /* ==========================================================
    6. 回憶表單
    ========================================================== */
-function MomentForm({ artist, initial, onSave, onDelete, onClose }) {
+function MomentForm({ artist, initial, eras, onSave, onDelete, onClose }) {
   const [date, setDate] = useState(initial?.date || todayISO());
   const [type, setType] = useState(initial?.type || "stage");
   const [title, setTitle] = useState(initial?.title || "");
@@ -816,7 +905,28 @@ function MomentForm({ artist, initial, onSave, onDelete, onClose }) {
   const [photo, setPhoto] = useState(initial?.photo || "");
   const [milestone, setMilestone] = useState(Boolean(initial?.milestone));
   const [tagged, setTagged] = useState(initial?.members || []);
+  const [era, setEra] = useState(initial?.era || "");
+  const [songs, setSongs] = useState(initial?.songs || []);
+  const [openSong, setOpenSong] = useState(null);
   const ytId = youtubeId(link);
+
+  const addSong = () => {
+    setSongs((s) => [...s, emptySong()]);
+    setOpenSong(null);
+  };
+  const dropSong = (i) => setSongs((s) => s.filter((_, k) => k !== i));
+  const setSongField = (i, patch) =>
+    setSongs((s) => s.map((x, k) => (k === i ? { ...x, ...patch } : x)));
+  const setCam = (i, who, key, val) =>
+    setSongs((s) => s.map((x, k) => {
+      if (k !== i) return x;
+      const cams = { ...(x.cams || {}) };
+      const cur = { ...(cams[who] || { fan: "", face: "" }) };
+      cur[key] = val;
+      if (!cur.fan && !cur.face) delete cams[who];
+      else cams[who] = cur;
+      return { ...x, cams };
+    }));
 
   const toggleMember = (n) =>
     setTagged((t) => (t.includes(n) ? t.filter((x) => x !== n) : [...t, n]));
@@ -824,6 +934,18 @@ function MomentForm({ artist, initial, onSave, onDelete, onClose }) {
   const submit = () => {
     if (!title.trim()) return alert("先寫下這個回憶的標題。");
     if (!date) return alert("選一個日期。");
+    const cleanSongs = songs
+      .filter((s) => s.name.trim() || s.fullCam.trim() || Object.keys(s.cams || {}).length)
+      .map((s) => {
+        const cams = {};
+        Object.entries(s.cams || {}).forEach(([who, c]) => {
+          const fan = normalizeUrl(c.fan);
+          const face = normalizeUrl(c.face);
+          if (fan || face) cams[who] = { fan, face };
+        });
+        return { name: s.name.trim(), fullCam: normalizeUrl(s.fullCam), cams };
+      });
+
     onSave({
       artistId: artist.id,
       date, type,
@@ -832,7 +954,9 @@ function MomentForm({ artist, initial, onSave, onDelete, onClose }) {
       link: link.trim(),
       photo,
       milestone,
-      members: tagged
+      members: tagged,
+      era: era.trim(),
+      songs: cleanSongs
     });
   };
 
@@ -884,6 +1008,70 @@ function MomentForm({ artist, initial, onSave, onDelete, onClose }) {
           </div>
         </div>
       )}
+
+      <div className="field">
+        <label>專輯期</label>
+        <input type="text" value={era} onChange={(e) => setEra(e.target.value)}
+          list="era-list" placeholder="例：迷一 the Billage of perception" />
+        <datalist id="era-list">
+          {(eras || []).map((x) => <option key={x} value={x} />)}
+        </datalist>
+        <p className="hint">填了之後，時間軸上會多一排專輯期篩選。</p>
+      </div>
+
+      <div className="field">
+        <label>歌曲與 CAM</label>
+        {songs.map((s, i) => (
+          <div className="song-card" key={i}>
+            <div className="member-row">
+              <input type="text" value={s.name} placeholder="歌名"
+                onChange={(e) => setSongField(i, { name: e.target.value })} />
+              <button type="button" className="iconbtn" onClick={() => dropSong(i)} aria-label="刪除這首">
+                <i className="ph-duotone ph-minus-circle" />
+              </button>
+            </div>
+            <input type="text" value={s.fullCam} placeholder="FullCam 連結"
+              onChange={(e) => setSongField(i, { fullCam: e.target.value })} />
+
+            {artist.members?.length > 0 && (
+              <>
+                <button type="button"
+                  className={"chip" + (openSong === i ? " on" : "")}
+                  onClick={() => setOpenSong(openSong === i ? null : i)}>
+                  <i className="ph-duotone ph-users-three" />
+                  個人 CAM
+                  {Object.keys(s.cams || {}).length > 0 && " · " + Object.keys(s.cams).length}
+                </button>
+
+                {openSong === i && (
+                  <div style={{ marginTop: 10 }}>
+                    {artist.members.map((m) => (
+                      <div className="cam-edit" key={m.name}>
+                        <span className="who">
+                          {m.avatar && <img src={m.avatar} alt="" />}
+                          {m.name}
+                        </span>
+                        <input type="text" placeholder="FanCam"
+                          value={s.cams?.[m.name]?.fan || ""}
+                          onChange={(e) => setCam(i, m.name, "fan", e.target.value)} />
+                        <input type="text" placeholder="FaceCam"
+                          value={s.cams?.[m.name]?.face || ""}
+                          onChange={(e) => setCam(i, m.name, "face", e.target.value)} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        ))}
+        <button type="button" className="chip" onClick={addSong}>
+          <i className="ph-duotone ph-plus" />加一首歌
+        </button>
+        <p className="hint">
+          一場舞台可以掛好幾首。連結只寫 youtu.be/xxxx 也可以，存檔時會自動補上 https。
+        </p>
+      </div>
 
       <ImagePicker label="照片" value={photo} onChange={setPhoto} />
 
@@ -968,7 +1156,7 @@ function Shelf({ artists, onOpen, onNew, onDemo }) {
                 <button key={a.id} className="artist-card" onClick={() => onOpen(a.id)}>
                   <span className="stripe" style={{ background: grad }} />
                   {a.cover ? (
-                    <img className="thumb" src={a.cover} alt="" />
+                    <img className={"thumb" + (a.mono ? " mono" : "")} src={a.cover} alt="" />
                   ) : (
                     <span className="thumb empty" style={{ background: gradientOf(paletteOf(a), "135deg") }}>
                       <i className="ph-duotone ph-music-notes-simple" />
@@ -999,7 +1187,25 @@ function Shelf({ artists, onOpen, onNew, onDemo }) {
 function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMoment }) {
   const [member, setMember] = useState("all");
   const [type, setType] = useState("all");
+  const [era, setEra] = useState("all");
   const [asc, setAsc] = useState(true);
+  const [openIds, setOpenIds] = useState(() => new Set());
+
+  const toggleOpen = (id) =>
+    setOpenIds((s) => {
+      const next = new Set(s);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+  /* 專輯期清單直接從現有回憶收集，不用另外維護 */
+  const eras = useMemo(() => {
+    const seen = new Map();
+    moments.forEach((m) => {
+      if (m.era && !seen.has(m.era)) seen.set(m.era, m.date || "");
+    });
+    return [...seen.entries()].sort((a, b) => (a[1] < b[1] ? -1 : 1)).map((e) => e[0]);
+  }, [moments]);
 
   const palette = paletteOf(artist);
   const paletteKey = palette.join(",");
@@ -1012,6 +1218,7 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
     r.setProperty("--accent-08", alpha(main, 0.08));
     r.setProperty("--accent-16", alpha(main, 0.16));
     r.setProperty("--accent-32", alpha(main, 0.32));
+    r.setProperty("--accent-wash", alpha(main, washAlpha(main)));
     r.setProperty("--on-accent", readableOn(main));
     r.setProperty("--accent-grad", gradientOf(list, "135deg"));
     r.setProperty("--accent-grad-v", gradientOf(list, "to bottom"));
@@ -1020,13 +1227,14 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
   const filtered = useMemo(() => {
     let list = moments.filter((m) => {
       if (type !== "all" && m.type !== type) return false;
+      if (era !== "all" && m.era !== era) return false;
       if (member !== "all" && !(m.members || []).includes(member)) return false;
       return true;
     });
     list.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
     if (!asc) list.reverse();
     return list;
-  }, [moments, type, member, asc]);
+  }, [moments, type, member, era, asc]);
 
   const grouped = useMemo(() => {
     const out = [];
@@ -1059,7 +1267,7 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
         </button>
       </div>
 
-      <div className={"hero" + (artist.cover ? "" : " blank")}>
+      <div className={"hero" + (artist.cover ? "" : " blank") + (artist.mono ? " mono" : "")}>
         {artist.cover && <img src={artist.cover} alt="" />}
         <div className="wash" />
       </div>
@@ -1114,6 +1322,18 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
               </button>
             ))}
           </div>
+          {eras.length > 0 && (
+            <div className="row">
+              <button className={"chip" + (era === "all" ? " on" : "")} onClick={() => setEra("all")}>
+                全部專輯期
+              </button>
+              {eras.map((x) => (
+                <button key={x} className={"chip" + (era === x ? " on" : "")} onClick={() => setEra(x)}>
+                  {x}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="sortbar">
@@ -1150,6 +1370,9 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
                   const t = typeOf(m.type);
                   const yt = youtubeId(m.link);
                   const avatarOf = (n) => artist.members?.find((x) => x.name === n)?.avatar;
+                  const songs = m.songs || [];
+                  const camCount = countCams(songs);
+                  const open = openIds.has(m.id);
                   return (
                     <div className="moment" key={m.id}>
                       <span className={"node" + (m.milestone ? " star" : "")}>
@@ -1160,10 +1383,16 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
                           <span className="m-head">
                             <span className="m-date">{fmtDate(m.date)}</span>
                             <span className="m-type"><i className={"ph-duotone " + t.icon} />{t.label}</span>
+                            {m.era && <span className="era-tag">{m.era}</span>}
                           </span>
                           <span className={"m-title" + (m.milestone ? " big" : "")} style={{ display: "block" }}>
                             {m.title}
                           </span>
+                          {songs.length > 0 && (
+                            <span className="m-note" style={{ display: "block" }}>
+                              {songs.map((s) => s.name).filter(Boolean).join(" · ")}
+                            </span>
+                          )}
                           {m.note && <span className="m-note" style={{ display: "block" }}>{m.note}</span>}
                           {m.members?.length > 0 && (
                             <span className="m-members">
@@ -1177,6 +1406,60 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
                           )}
                           {m.photo && <img className="m-photo" src={m.photo} alt="" />}
                         </button>
+
+                        {songs.length > 0 && (
+                          <>
+                            <button className={"stage-toggle" + (open ? " open" : "")}
+                              onClick={() => toggleOpen(m.id)}
+                              aria-expanded={open}>
+                              <i className="ph-duotone ph-vinyl-record" />
+                              {songs.length} 首 · {camCount} 個 CAM
+                              <i className="ph-duotone ph-caret-down caret" />
+                            </button>
+
+                            {open && (
+                              <div className="stage-panel">
+                                {songs.map((s, si) => {
+                                  const cams = Object.entries(s.cams || {});
+                                  return (
+                                    <div className="song-row" key={si}>
+                                      <div className="song-name">{s.name || "（未命名）"}</div>
+                                      <div className="cam-list">
+                                        {s.fullCam && (
+                                          <a className="cam-link full" href={s.fullCam}
+                                            target="_blank" rel="noopener noreferrer">
+                                            <i className="ph-fill ph-play-circle" />FullCam
+                                          </a>
+                                        )}
+                                        {cams.map(([who, c]) => (
+                                          <React.Fragment key={who}>
+                                            {c.fan && (
+                                              <a className="cam-link" href={c.fan}
+                                                target="_blank" rel="noopener noreferrer">
+                                                {avatarOf(who) && <img className="av" src={avatarOf(who)} alt="" />}
+                                                {who} Fan
+                                              </a>
+                                            )}
+                                            {c.face && (
+                                              <a className="cam-link" href={c.face}
+                                                target="_blank" rel="noopener noreferrer">
+                                                {avatarOf(who) && <img className="av" src={avatarOf(who)} alt="" />}
+                                                {who} Face
+                                              </a>
+                                            )}
+                                          </React.Fragment>
+                                        ))}
+                                        {!s.fullCam && cams.length === 0 && (
+                                          <span className="cam-none">還沒有連結</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </>
+                        )}
 
                         {yt ? (
                           <a className="yt-card" href={youtubeWatch(yt)} target="_blank" rel="noopener noreferrer">
@@ -1305,6 +1588,7 @@ function App() {
         <MomentForm
           artist={active}
           initial={momentForm.data}
+          eras={[...new Set(moments.map((m) => m.era).filter(Boolean))]}
           onClose={() => setMomentForm(null)}
           onSave={async (data) => {
             await store.saveMoment(data, momentForm.data?.id);
