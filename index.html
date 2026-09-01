@@ -226,12 +226,27 @@
     font-size:11.5px;padding:2px 9px;border-radius:999px;
     border:1px solid var(--line);color:var(--ink-2);
   }
-  /* 專輯期標籤 */
+  /* 專輯期標籤與封面 */
   .era-tag{
     font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;
     color:var(--ink-3);border:1px solid var(--line);
     padding:1px 8px;border-radius:999px;
+    display:inline-flex;align-items:center;gap:5px;
   }
+  .era-tag img{width:15px;height:15px;border-radius:3px;object-fit:cover}
+  .chip .cover{width:22px;height:22px;border-radius:4px;object-fit:cover;margin-left:-6px;flex:none}
+  .era-head{
+    display:flex;gap:14px;align-items:center;
+    background:var(--paper-2);border:1px solid var(--line);
+    border-radius:14px;padding:12px;margin:4px 0 10px;
+  }
+  .era-head img{
+    width:76px;height:76px;flex:none;border-radius:8px;object-fit:cover;
+    box-shadow:0 2px 10px rgba(26,25,24,.14);
+  }
+  .era-head .txt{min-width:0}
+  .era-head .nm{font-family:var(--serif);font-weight:700;font-size:17px;line-height:1.35}
+  .era-head .sub{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin-top:3px}
 
   /* 打歌舞台：折疊面板 */
   .stage-toggle{
@@ -906,6 +921,15 @@ function MomentForm({ artist, initial, eras, onSave, onDelete, onClose }) {
   const [milestone, setMilestone] = useState(Boolean(initial?.milestone));
   const [tagged, setTagged] = useState(initial?.members || []);
   const [era, setEra] = useState(initial?.era || "");
+  const eraCovers = artist.eraCovers || {};
+  const [eraCover, setEraCover] = useState(eraCovers[initial?.era] || "");
+  const coverRef = useRef(null);
+
+  /* 換到已經有封面的專輯期時，自動帶出既有的那張 */
+  useEffect(() => {
+    const key = era.trim();
+    setEraCover(key && eraCovers[key] ? eraCovers[key] : "");
+  }, [era]);
   const [songs, setSongs] = useState(initial?.songs || []);
   const [openSong, setOpenSong] = useState(null);
   const ytId = youtubeId(link);
@@ -957,7 +981,7 @@ function MomentForm({ artist, initial, eras, onSave, onDelete, onClose }) {
       members: tagged,
       era: era.trim(),
       songs: cleanSongs
-    });
+    }, { era: era.trim(), cover: eraCover });
   };
 
   return (
@@ -1017,6 +1041,42 @@ function MomentForm({ artist, initial, eras, onSave, onDelete, onClose }) {
           {(eras || []).map((x) => <option key={x} value={x} />)}
         </datalist>
         <p className="hint">填了之後，時間軸上會多一排專輯期篩選。</p>
+
+        {era.trim() && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              {eraCover
+                ? <img src={eraCover} alt=""
+                    style={{ width: 64, height: 64, borderRadius: 8, objectFit: "cover", flex: "none" }} />
+                : <span style={{
+                    width: 64, height: 64, borderRadius: 8, flex: "none",
+                    display: "grid", placeItems: "center",
+                    border: "1px dashed var(--line)", color: "var(--ink-3)", fontSize: 22
+                  }}><i className="ph-duotone ph-disc" /></span>}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <button type="button" className="chip" onClick={() => coverRef.current.click()}>
+                  <i className="ph-duotone ph-image" />
+                  {eraCover ? "換張專輯封面" : "加專輯封面"}
+                </button>
+                {eraCover && (
+                  <button type="button" className="chip" style={{ marginTop: 6 }}
+                    onClick={() => setEraCover("")}>
+                    <i className="ph-duotone ph-trash" />移除
+                  </button>
+                )}
+              </div>
+            </div>
+            <input ref={coverRef} type="file" accept="image/*" style={{ display: "none" }}
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                try { setEraCover(await compressImage(f, 500, 0.75)); }
+                catch { alert("這張圖讀不進來，換一張試試。"); }
+                e.target.value = "";
+              }} />
+            <p className="hint">封面掛在「{era.trim()}」上，同一期的所有回憶都會共用。</p>
+          </div>
+        )}
       </div>
 
       <div className="field">
@@ -1208,6 +1268,7 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
   }, [moments]);
 
   const palette = paletteOf(artist);
+  const covers = artist.eraCovers || {};
   const paletteKey = palette.join(",");
 
   useEffect(() => {
@@ -1329,6 +1390,7 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
               </button>
               {eras.map((x) => (
                 <button key={x} className={"chip" + (era === x ? " on" : "")} onClick={() => setEra(x)}>
+                  {covers[x] && <img className="cover" src={covers[x]} alt="" />}
                   {x}
                 </button>
               ))}
@@ -1342,6 +1404,19 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
             {asc ? "舊 → 新" : "新 → 舊"}
           </button>
         </div>
+
+        {era !== "all" && covers[era] && (
+          <div className="era-head">
+            <img src={covers[era]} alt="" />
+            <div className="txt">
+              <div className="nm">{era}</div>
+              <div className="sub">
+                {filtered.length} 個回憶
+                {filtered.length > 0 && " · " + fmtDate(filtered[asc ? 0 : filtered.length - 1].date)}
+              </div>
+            </div>
+          </div>
+        )}
 
         {filtered.length === 0 ? (
           <div className="empty">
@@ -1383,7 +1458,12 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
                           <span className="m-head">
                             <span className="m-date">{fmtDate(m.date)}</span>
                             <span className="m-type"><i className={"ph-duotone " + t.icon} />{t.label}</span>
-                            {m.era && <span className="era-tag">{m.era}</span>}
+                            {m.era && (
+                              <span className="era-tag">
+                                {covers[m.era] && <img src={covers[m.era]} alt="" />}
+                                {m.era}
+                              </span>
+                            )}
                           </span>
                           <span className={"m-title" + (m.milestone ? " big" : "")} style={{ display: "block" }}>
                             {m.title}
@@ -1590,8 +1670,17 @@ function App() {
           initial={momentForm.data}
           eras={[...new Set(moments.map((m) => m.era).filter(Boolean))]}
           onClose={() => setMomentForm(null)}
-          onSave={async (data) => {
+          onSave={async (data, eraCover) => {
             await store.saveMoment(data, momentForm.data?.id);
+            /* 專輯封面存在藝人身上，同一期的回憶共用一張 */
+            if (eraCover?.era) {
+              const covers = { ...(active.eraCovers || {}) };
+              if (eraCover.cover) covers[eraCover.era] = eraCover.cover;
+              else delete covers[eraCover.era];
+              if (JSON.stringify(covers) !== JSON.stringify(active.eraCovers || {})) {
+                await store.saveArtist({ eraCovers: covers }, active.id);
+              }
+            }
             setMomentForm(null);
           }}
           onDelete={async () => {
