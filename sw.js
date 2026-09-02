@@ -1,6 +1,6 @@
 /* 應援色 · 追星時間軸 — service worker
    改版時把 VERSION 加一，舊快取會自動清掉 */
-const VERSION = "v5";
+const VERSION = "v6";
 const SHELL = "shell-" + VERSION;
 const RUNTIME = "runtime-" + VERSION;
 
@@ -9,11 +9,11 @@ const SHELL_FILES = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./icon-192.png",
-  "./icon-512.png",
-  "./icon-maskable-192.png",
-  "./icon-maskable-512.png",
-  "./apple-touch-icon.png"
+  "./icon-192-v2.png",
+  "./icon-512-v2.png",
+  "./icon-maskable-192-v2.png",
+  "./icon-maskable-512-v2.png",
+  "./apple-touch-icon-v2.png"
 ];
 
 self.addEventListener("install", (e) => {
