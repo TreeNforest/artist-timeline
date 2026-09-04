@@ -1,6 +1,6 @@
 /* 應援色 · 追星時間軸 — service worker
    改版時把 VERSION 加一，舊快取會自動清掉 */
-const VERSION = "v6";
+const VERSION = "v8";
 const SHELL = "shell-" + VERSION;
 const RUNTIME = "runtime-" + VERSION;
 

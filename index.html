@@ -110,16 +110,20 @@
   .artist-card:active{transform:scale(.99)}
   .artist-card .stripe{width:6px;flex:none}
   .artist-card .thumb{
-    width:82px;height:82px;flex:none;object-fit:cover;
+    width:82px;height:82px;flex:none;object-fit:cover;align-self:flex-start;
   }
   .artist-card .thumb.mono{filter:grayscale(1) contrast(1.06)}
   .artist-card .thumb.empty{display:grid;place-items:center;font-size:24px;color:#fff}
   .artist-card .body{flex:1;min-width:0;padding:12px 14px}
   .artist-card .name{
+    display:block;
     font-family:var(--serif);font-weight:700;font-size:19px;line-height:1.3;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  .artist-card .meta{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin-top:3px}
+  .artist-card .meta{
+    display:block;
+    font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin-top:3px;
+  }
 
   /* ---------- Hero ---------- */
   .hero{position:relative;height:290px;overflow:hidden;background:var(--ink)}
@@ -301,18 +305,23 @@
   }
   .avatar-btn img{width:100%;height:100%;object-fit:cover}
 
-  /* YouTube 縮圖 */
+  /* YouTube 縮圖與內嵌播放器 */
   .yt-card{
-    display:block;position:relative;margin-top:10px;
+    display:block;position:relative;margin-top:10px;width:100%;
     border-radius:10px;overflow:hidden;border:1px solid var(--line);
+    padding:0;background:none;
   }
-  .yt-card img{width:100%;aspect-ratio:16/9;object-fit:cover;background:#111}
+  .yt-card img{width:100%;aspect-ratio:16/9;object-fit:cover;background:#111;display:block}
   .yt-play{position:absolute;inset:0;display:grid;place-items:center}
   .yt-play i{font-size:46px;color:#fff;filter:drop-shadow(0 2px 10px rgba(0,0,0,.55))}
-  .yt-cap{
-    position:absolute;left:0;right:0;bottom:0;padding:6px 10px;
-    background:linear-gradient(to top, rgba(0,0,0,.72), transparent);
-    color:#fff;font-family:var(--mono);font-size:11px;
+  .yt-frame{
+    position:relative;width:100%;aspect-ratio:16/9;margin-top:10px;
+    border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#000;
+  }
+  .yt-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .yt-out{
+    display:inline-flex;align-items:center;gap:5px;margin-top:7px;
+    font-family:var(--mono);font-size:11.5px;color:var(--ink-3);
   }
 
   /* ---------- 空狀態 ---------- */
@@ -526,20 +535,52 @@ const store = useCloud ? makeCloudStore(db) : makeLocalStore();
 /* ==========================================================
    3. 常數與小工具
    ========================================================== */
-const TYPES = [
-  { id: "stage",    label: "演出", icon: "ph-microphone-stage" },
-  { id: "comeback", label: "回歸", icon: "ph-repeat" },
-  { id: "release",  label: "發行", icon: "ph-vinyl-record" },
-  { id: "birthday", label: "生日", icon: "ph-cake" },
-  { id: "live",     label: "直播", icon: "ph-video-camera" },
-  { id: "event",    label: "活動", icon: "ph-ticket" },
-  { id: "variety",  label: "綜藝", icon: "ph-television-simple" },
-  { id: "award",    label: "獎項", icon: "ph-trophy" },
-  { id: "other",    label: "其他", icon: "ph-sparkle" }
-];
-const typeOf = (id) => TYPES.find((t) => t.id === id) || TYPES[TYPES.length - 1];
+/* 兩套類型：音樂藝人與影集作品各用各的 */
+const TYPE_SETS = {
+  music: [
+    { id: "stage",    label: "演出", icon: "ph-microphone-stage" },
+    { id: "comeback", label: "回歸", icon: "ph-repeat" },
+    { id: "release",  label: "發行", icon: "ph-vinyl-record" },
+    { id: "birthday", label: "生日", icon: "ph-cake" },
+    { id: "live",     label: "直播", icon: "ph-video-camera" },
+    { id: "event",    label: "活動", icon: "ph-ticket" },
+    { id: "variety",  label: "綜藝", icon: "ph-television-simple" },
+    { id: "award",    label: "獎項", icon: "ph-trophy" },
+    { id: "other",    label: "其他", icon: "ph-sparkle" }
+  ],
+  show: [
+    { id: "trailer",  label: "預告", icon: "ph-film-reel" },
+    { id: "premiere", label: "首播", icon: "ph-monitor-play" },
+    { id: "episode",  label: "單集", icon: "ph-television-simple" },
+    { id: "finale",   label: "完結", icon: "ph-flag-checkered" },
+    { id: "bts",      label: "花絮", icon: "ph-video-camera" },
+    { id: "press",    label: "宣傳", icon: "ph-microphone" },
+    { id: "ost",      label: "OST", icon: "ph-music-notes" },
+    { id: "award",    label: "獎項", icon: "ph-trophy" },
+    { id: "other",    label: "其他", icon: "ph-sparkle" }
+  ]
+};
 
-const ANCHORS = ["出道日", "首張作品", "入坑日", "成軍日"];
+const KINDS = [
+  { id: "music", label: "音樂藝人", icon: "ph-microphone-stage" },
+  { id: "show",  label: "影集作品", icon: "ph-television" }
+];
+
+const typesFor = (kind) => TYPE_SETS[kind] || TYPE_SETS.music;
+
+/* 跨兩套查表，換過類型的舊資料也還認得出來 */
+const ALL_TYPES = [...TYPE_SETS.music, ...TYPE_SETS.show];
+const typeOf = (id, kind) =>
+  typesFor(kind).find((t) => t.id === id) ||
+  ALL_TYPES.find((t) => t.id === id) ||
+  { id: "other", label: "其他", icon: "ph-sparkle" };
+
+/* 兩種型態的用語不同 */
+const LABELS = {
+  music: { member: "成員", color: "應援色", anchors: ["出道日", "首張作品", "入坑日", "成軍日"], era: "專輯期", eraHint: "例：迷一 the Billage of perception", cover: "專輯封面" },
+  show:  { member: "演員", color: "主題色", anchors: ["首播日", "開播日", "入坑日", "完結日"], era: "季別", eraHint: "例：第一季 / 神秘的魔法石", cover: "主視覺" }
+};
+const labelsFor = (kind) => LABELS[kind] || LABELS.music;
 
 const PRESET_COLORS = [
   "#7C6BD8", "#E8546B", "#2F6F9E", "#D98B2B",
@@ -709,6 +750,34 @@ function Sheet({ title, onClose, children }) {
 }
 
 /* 成員頭像：小尺寸圓形，壓到 200px 就夠用，不會撐爆文件大小 */
+/* 點縮圖就地展開播放。用 youtube-nocookie 減少追蹤，
+   遇到不允許嵌入的影片時，下方的外開連結就是退路 */
+function YouTubePlayer({ id }) {
+  const [playing, setPlaying] = useState(false);
+  return (
+    <>
+      {playing ? (
+        <div className="yt-frame">
+          <iframe
+            src={"https://www.youtube-nocookie.com/embed/" + id + "?autoplay=1&playsinline=1&rel=0"}
+            title="YouTube"
+            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          />
+        </div>
+      ) : (
+        <button className="yt-card" onClick={() => setPlaying(true)} aria-label="播放影片">
+          <img src={youtubeThumb(id)} alt="" loading="lazy" />
+          <span className="yt-play"><i className="ph-fill ph-play-circle" /></span>
+        </button>
+      )}
+      <a className="yt-out" href={youtubeWatch(id)} target="_blank" rel="noopener noreferrer">
+        <i className="ph-duotone ph-arrow-square-out" />在 YouTube 開啟
+      </a>
+    </>
+  );
+}
+
 function AvatarButton({ value, onChange, label }) {
   const ref = useRef(null);
   const pick = async (e) => {
@@ -775,6 +844,8 @@ function ArtistForm({ initial, onSave, onDelete, onClose }) {
   const color = colors[0];
   const [cover, setCover] = useState(initial?.cover || "");
   const [mono, setMono] = useState(Boolean(initial?.mono));
+  const [kind, setKind] = useState(initial?.kind || "music");
+  const L = labelsFor(kind);
   const [anchorLabel, setAnchorLabel] = useState(initial?.anchorLabel || "出道日");
   const [anchorDate, setAnchorDate] = useState(initial?.anchorDate || "");
   const [members, setMembers] = useState(initial?.members?.length ? initial.members : []);
@@ -797,6 +868,7 @@ function ArtistForm({ initial, onSave, onDelete, onClose }) {
       color: colors[0],
       cover,
       mono,
+      kind,
       anchorLabel,
       anchorDate,
       members: members
@@ -808,8 +880,21 @@ function ArtistForm({ initial, onSave, onDelete, onClose }) {
   return (
     <Sheet title={initial ? "編輯藝人" : "新增藝人"} onClose={onClose}>
       <div className="field">
+        <label>這是什麼</label>
+        <div className="row">
+          {KINDS.map((k) => (
+            <button key={k.id} type="button" className={"chip" + (k.id === kind ? " on" : "")}
+              onClick={() => setKind(k.id)}>
+              <i className={"ph-duotone " + k.icon} />{k.label}
+            </button>
+          ))}
+        </div>
+        <p className="hint">決定時間軸上可以用哪些類型，之後隨時能改。</p>
+      </div>
+
+      <div className="field">
         <label>名稱</label>
-        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="團名或歌手名" />
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder={kind === "show" ? "劇名或作品名" : "團名或歌手名"} />
       </div>
 
       <div className="field">
@@ -818,7 +903,7 @@ function ArtistForm({ initial, onSave, onDelete, onClose }) {
       </div>
 
       <div className="field">
-        <label>應援色</label>
+        <label>{L.color}</label>
         <div className="grad-preview" style={{ background: gradientOf(colors, "90deg") }} />
         {colors.map((c, i) => (
           <div className="member-row" key={i}>
@@ -864,7 +949,7 @@ function ArtistForm({ initial, onSave, onDelete, onClose }) {
       <div className="field">
         <label>起算日</label>
         <div className="row" style={{ marginBottom: 8 }}>
-          {ANCHORS.map((a) => (
+          {L.anchors.map((a) => (
             <button key={a} type="button" className={"chip" + (a === anchorLabel ? " on" : "")}
               onClick={() => setAnchorLabel(a)}>{a}</button>
           ))}
@@ -874,12 +959,12 @@ function ArtistForm({ initial, onSave, onDelete, onClose }) {
       </div>
 
       <div className="field">
-        <label>成員</label>
+        <label>{L.member}</label>
         {members.map((m, i) => (
           <div className="member-row" key={i}>
-            <AvatarButton value={m.avatar || ""} label={m.name || "成員 " + (i + 1)}
+            <AvatarButton value={m.avatar || ""} label={m.name || L.member + " " + (i + 1)}
               onChange={(v) => setMember(i, { avatar: v })} />
-            <input type="text" value={m.name} placeholder={"成員 " + (i + 1)}
+            <input type="text" value={m.name} placeholder={L.member + " " + (i + 1)}
               onChange={(e) => setMember(i, { name: e.target.value })} />
             <input type="color" value={m.color || color}
               onChange={(e) => setMember(i, { color: e.target.value })} aria-label="成員色" />
@@ -889,10 +974,10 @@ function ArtistForm({ initial, onSave, onDelete, onClose }) {
           </div>
         ))}
         <button type="button" className="chip" onClick={addMember}>
-          <i className="ph-duotone ph-plus" />加一位成員
+          <i className="ph-duotone ph-plus" />加一位{L.member}
         </button>
         <p className="hint">
-          頭像選好後再點一下可以移除。solo 歌手可以整段留空，成員篩選會自動隱藏。
+          頭像選好後再點一下可以移除。solo 或不需要時整段留空，這排篩選就會自動隱藏。
         </p>
       </div>
 
@@ -912,8 +997,10 @@ function ArtistForm({ initial, onSave, onDelete, onClose }) {
    6. 回憶表單
    ========================================================== */
 function MomentForm({ artist, initial, eras, onSave, onDelete, onClose }) {
+  const TYPES = typesFor(artist.kind);
+  const L = labelsFor(artist.kind);
   const [date, setDate] = useState(initial?.date || todayISO());
-  const [type, setType] = useState(initial?.type || "stage");
+  const [type, setType] = useState(initial?.type || TYPES[0].id);
   const [title, setTitle] = useState(initial?.title || "");
   const [note, setNote] = useState(initial?.note || "");
   const [link, setLink] = useState(initial?.link || "");
@@ -1034,13 +1121,13 @@ function MomentForm({ artist, initial, eras, onSave, onDelete, onClose }) {
       )}
 
       <div className="field">
-        <label>專輯期</label>
+        <label>{L.era}</label>
         <input type="text" value={era} onChange={(e) => setEra(e.target.value)}
-          list="era-list" placeholder="例：迷一 the Billage of perception" />
+          list="era-list" placeholder={L.eraHint} />
         <datalist id="era-list">
           {(eras || []).map((x) => <option key={x} value={x} />)}
         </datalist>
-        <p className="hint">填了之後，時間軸上會多一排專輯期篩選。</p>
+        <p className="hint">填了之後，時間軸上會多一排{L.era}篩選。</p>
 
         {era.trim() && (
           <div style={{ marginTop: 12 }}>
@@ -1056,7 +1143,7 @@ function MomentForm({ artist, initial, eras, onSave, onDelete, onClose }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <button type="button" className="chip" onClick={() => coverRef.current.click()}>
                   <i className="ph-duotone ph-image" />
-                  {eraCover ? "換張專輯封面" : "加專輯封面"}
+                  {eraCover ? "換張" + L.cover : "加" + L.cover}
                 </button>
                 {eraCover && (
                   <button type="button" className="chip" style={{ marginTop: 6 }}
@@ -1074,7 +1161,7 @@ function MomentForm({ artist, initial, eras, onSave, onDelete, onClose }) {
                 catch { alert("這張圖讀不進來，換一張試試。"); }
                 e.target.value = "";
               }} />
-            <p className="hint">封面掛在「{era.trim()}」上，同一期的所有回憶都會共用。</p>
+            <p className="hint">{L.cover}掛在「{era.trim()}」上，同一{L.era}的所有回憶都會共用。</p>
           </div>
         )}
       </div>
@@ -1141,11 +1228,11 @@ function MomentForm({ artist, initial, eras, onSave, onDelete, onClose }) {
           placeholder="YouTube 影片、貼文或購票紀錄" />
         {ytId ? (
           <>
-            <div className="yt-card" style={{ marginTop: 10 }}>
+            <div className="yt-card" style={{ marginTop: 10, border: "1px solid var(--line)" }}>
               <img src={youtubeThumb(ytId)} alt="" />
               <span className="yt-play"><i className="ph-fill ph-play-circle" /></span>
             </div>
-            <p className="hint">認出 YouTube 影片了，縮圖會直接顯示在時間軸上。</p>
+            <p className="hint">認出 YouTube 影片了，時間軸上點縮圖就能直接播。</p>
           </>
         ) : (
           <p className="hint">貼上 YouTube 連結會自動抓縮圖，其他網址則顯示為文字連結。</p>
@@ -1179,7 +1266,7 @@ function Shelf({ artists, onOpen, onNew, onDemo }) {
   return (
     <>
       <div className="topbar">
-        <span className="eyebrow" style={{ color: "var(--ink-3)" }}>MY IDOLS</span>
+        <span className="eyebrow" style={{ color: "var(--ink-3)" }}>ARTISTS</span>
         <div className="spacer" />
         <button className="pill" onClick={onNew}>
           <i className="ph-duotone ph-plus" />新增藝人
@@ -1219,7 +1306,7 @@ function Shelf({ artists, onOpen, onNew, onDemo }) {
                     <img className={"thumb" + (a.mono ? " mono" : "")} src={a.cover} alt="" />
                   ) : (
                     <span className="thumb empty" style={{ background: gradientOf(paletteOf(a), "135deg") }}>
-                      <i className="ph-duotone ph-music-notes-simple" />
+                      <i className={"ph-duotone " + (a.kind === "show" ? "ph-television" : "ph-music-notes-simple")} />
                     </span>
                   )}
                   <span className="body">
@@ -1269,6 +1356,8 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
 
   const palette = paletteOf(artist);
   const covers = artist.eraCovers || {};
+  const TYPES = typesFor(artist.kind);
+  const L = labelsFor(artist.kind);
   const paletteKey = palette.join(",");
 
   useEffect(() => {
@@ -1335,7 +1424,7 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
 
       <div className="wrap">
         <div className="title-block">
-          <span className="eyebrow">IDOL TIMELINE</span>
+          <span className="eyebrow">{artist.kind === "show" ? "SHOW TIMELINE" : "IDOL TIMELINE"}</span>
           <h1>{artist.name}</h1>
           <p>{artist.tagline || "從第一天到現在的大小回憶。"}</p>
         </div>
@@ -1360,7 +1449,7 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
           {artist.members?.length > 0 && (
             <div className="row">
               <button className={"chip" + (member === "all" ? " on" : "")} onClick={() => setMember("all")}>
-                全部成員
+                全部{L.member}
               </button>
               {artist.members.map((m) => (
                 <button key={m.name} className={"chip" + (member === m.name ? " on" : "")}
@@ -1386,7 +1475,7 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
           {eras.length > 0 && (
             <div className="row">
               <button className={"chip" + (era === "all" ? " on" : "")} onClick={() => setEra("all")}>
-                全部專輯期
+                全部{L.era}
               </button>
               {eras.map((x) => (
                 <button key={x} className={"chip" + (era === x ? " on" : "")} onClick={() => setEra(x)}>
@@ -1442,7 +1531,7 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
                   <div className="count">{g.items.length} 個回憶</div>
                 </div>
                 {g.items.map((m) => {
-                  const t = typeOf(m.type);
+                  const t = typeOf(m.type, artist.kind);
                   const yt = youtubeId(m.link);
                   const avatarOf = (n) => artist.members?.find((x) => x.name === n)?.avatar;
                   const songs = m.songs || [];
@@ -1501,11 +1590,12 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
                               <div className="stage-panel">
                                 {songs.map((s, si) => {
                                   const cams = Object.entries(s.cams || {});
+                                  const fullId = youtubeId(s.fullCam);
                                   return (
                                     <div className="song-row" key={si}>
                                       <div className="song-name">{s.name || "（未命名）"}</div>
                                       <div className="cam-list">
-                                        {s.fullCam && (
+                                        {s.fullCam && !fullId && (
                                           <a className="cam-link full" href={s.fullCam}
                                             target="_blank" rel="noopener noreferrer">
                                             <i className="ph-fill ph-play-circle" />FullCam
@@ -1533,6 +1623,7 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
                                           <span className="cam-none">還沒有連結</span>
                                         )}
                                       </div>
+                                      {fullId && <YouTubePlayer id={fullId} />}
                                     </div>
                                   );
                                 })}
@@ -1542,11 +1633,7 @@ function Timeline({ artist, moments, onBack, onEditArtist, onNewMoment, onEditMo
                         )}
 
                         {yt ? (
-                          <a className="yt-card" href={youtubeWatch(yt)} target="_blank" rel="noopener noreferrer">
-                            <img src={youtubeThumb(yt)} alt="" loading="lazy" />
-                            <span className="yt-play"><i className="ph-fill ph-play-circle" /></span>
-                            <span className="yt-cap">在 YouTube 開啟</span>
-                          </a>
+                          <YouTubePlayer id={yt} />
                         ) : m.link ? (
                           <a className="m-link" href={m.link} target="_blank" rel="noopener noreferrer">
                             <i className="ph-duotone ph-link-simple" />開啟連結
